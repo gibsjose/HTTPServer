@@ -1,9 +1,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/select.h>
 #include <unistd.h>
+
+#include "requesthandler.h"
 
 #define DEFAULT_SERVER_PORT 8080
 
@@ -48,11 +51,21 @@ int main(int argc, char * argv[]){
         else
         {
           // This is a socket that we need to read from.
-          char line[5000];
-          recv(i,line,5000,0);
-          printf("Got from client: %s\n",line);
-          send(i,line,strlen(line),0);
-          close(i);
+          pthread_t lThread;
+          if(pthread_create(&lThread, NULL, requesthandler_run, &i)) {
+
+            fprintf(stderr, "Error creating thread\n");
+            return 1;
+
+          }
+
+          /* wait for the second thread to finish */
+          if(pthread_join(lThread, NULL)) {
+
+            fprintf(stderr, "Error joining thread\n");
+            return 2;
+
+          }
 
           // Remove the socket from my set.
           FD_CLR(i, &sockets);

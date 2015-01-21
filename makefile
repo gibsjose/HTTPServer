@@ -4,14 +4,14 @@ CFLAGS = -I$(IDIR) -Wall -g -std=c99
 
 ODIR = obj
 LDIR = ../lib
-LIBS =
+LIBS = -lpthread
 
 BIN = httpserver
 
 _DEPS =
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = httpserver.o
+_OBJ = httpserver.o requesthandler.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 all: setup $(BIN)

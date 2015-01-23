@@ -120,6 +120,12 @@ int main(int argc, char * argv[]){
 void parse_args(int aNumArgs, char * aArgs[], unsigned * aPort, char ** aDocRoot,
                 char ** aLogFile)
 {
+  // Initialize with default argument values and overwrite them if they are in
+  // the argument list.
+  *aPort = DEFAULT_SERVER_PORT;
+  *aDocRoot = DEFAULT_DOCROOT;
+  *aLogFile = "";
+
   for(int i = 1; i + 1 < aNumArgs; i = i + 2)
   {
     char * lArgFlag = aArgs[i];

@@ -39,6 +39,15 @@ void * requesthandler_run(void * aData_ptr)
     printf("%s\n", line);
     printf("-----------------------------\n");
 
+    //Put together a response header
+
+    //Response header example
+    // HTTP/1.1 <status_code> <status_label>
+    // HTTP/1.1 200 OK
+    // Date: Fri, 31 Dec 1999 23:59:59 GMT
+    // Content-Type: text/html
+    // Content-Length: 1354
+
     // TODO: Change me.  I just send back the same data I was sent.
     printf("Sending...\n");
     size_t lRetVal_send = send(*lSocketFD,line,strlen(line),0);
@@ -66,4 +75,38 @@ void * requesthandler_run(void * aData_ptr)
     // Clear the buffer for reading from the client socket.
     memset(&line, 0, SOCKET_BUFFER_BYTES);
   }
+}
+
+//Header format
+//Date: Tue, 15 Nov 1994 08:12:31 GMT
+//gmtime(), tm struct
+void get_date_header()
+{
+    //time_t cur_time = time(NULL);
+    //struct tm tm = gmtime(&cur_time);
+}
+
+int read_file(char * filepath, char * lBuffer)
+{
+    size_t lTotalBytesRead = 0;
+    FILE * lFilePtr = fopen(filepath, "rb");
+
+    if(lFilePtr == 0) {
+        perror(strerror(errno));
+        return -1;
+    }
+    while (!feof(lFilePtr)) {
+        int lNumBytesRead = fread(lBuffer, 1, MAX_FILE_SIZE_BYTES, lFilePtr);
+        lTotalBytesRead += lNumBytesRead;
+        if(lNumBytesRead == 0) {
+            if (ferror(lFilePtr)) {
+                printf("There was an error reading the file.\n");
+                return -1;
+            }
+            else {
+                //done reading the file
+                return lTotalBytesRead;
+            }
+        }
+    }
 }

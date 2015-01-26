@@ -40,13 +40,32 @@ void * requesthandler_run(void * aData_ptr)
     printf("-----------------------------\n");
 
     //Put together a response header
-
     //Response header example
     // HTTP/1.1 <status_code> <status_label>
     // HTTP/1.1 200 OK
     // Date: Fri, 31 Dec 1999 23:59:59 GMT
     // Content-Type: text/html
     // Content-Length: 1354
+
+    //1. Parse the entire request header
+    // Build up a data stucture describing request
+    // use parse_request function
+
+    //2. If request type is not implemented (!GET) then build 501 response.
+    //   Set the file path to appropriate html response page.
+
+    //3. Check if the file exists. If not send 404 response.
+    //   Set the file path to appropriate html response page.
+
+    //4. Check for if-modified since header in the request. If found and the requested
+    //   file has not been modified, send a 304 response.
+    //   Set the file path to appropriate html response page. (probably no page for this so filepath null)
+
+    //5. Create status 200 reponse.
+    //   Set the file path to appropriate html response page (requested page)
+
+    //6. Read the appropriate file (filepath variable set by the responses)
+
 
     // TODO: Change me.  I just send back the same data I was sent.
     printf("Sending...\n");

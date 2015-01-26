@@ -53,59 +53,26 @@ int main(int argc, char * argv[]){
   //  size of backlog of connections: Drop connections after N UNHANDLED connections
   listen(sockfd,10);
 
-  //Add the socket to the set
-  FD_SET(sockfd, &sockets);
-
   int len=sizeof(clientaddr);
   while(1){
-    fd_set tmp_set = sockets;
+    int clientsocket = accept(sockfd, (struct sockaddr*)&clientaddr, &len);
 
-    //Select: Filters the set and checks if we can read from any of them, only leaving the FDs that
-    //are available to read from
-    //  0: maximum integer that must be selectable
-    //  1: address of the set of descriptors to check for READ availability
-    //  2: address of the set of descriptors to check for WRITE availability
-    //  3: address of the set of descriptors to check for ERROR availability
-    //  4: timeout: How long select call should block until at least one of the FDs is available to read/write
-    //  RET: Number of descriptors available in the set
-    select(FD_SETSIZE, &tmp_set, NULL, NULL, NULL);
+    //If this is a new connection:
+    printf("A client connected\n");
 
-    for(int i = 0; i < FD_SETSIZE; i++)
+    // This is a socket that we need to read from.
+    pthread_t lThread;
+    if(pthread_create(&lThread, NULL, requesthandler_run, &clientsocket))
     {
-      //inefficient since it checks ALL sockets rather than just the ones we care about
-      if(FD_ISSET(i, &tmp_set))
-      {
-        //if the file descriptor is still a member of this set
-        if(i == sockfd)
-        {
-          //If this is a new connection:
-          printf("A client connected\n");
+      fprintf(stderr, "Error creating thread\n");
+      return 1;
+    }
 
-          int clientsocket = accept(sockfd, (struct sockaddr*)&clientaddr, &len);
-
-          FD_SET(clientsocket, &sockets);
-        }
-        else
-        {
-          // This is a socket that we need to read from.
-          pthread_t lThread;
-          if(pthread_create(&lThread, NULL, requesthandler_run, &i))
-          {
-            fprintf(stderr, "Error creating thread\n");
-            return 1;
-          }
-
-          /* wait for the second thread to finish */
-          if(pthread_join(lThread, NULL))
-          {
-            fprintf(stderr, "Error joining thread\n");
-            return 2;
-          }
-
-          // Remove the socket from my set.
-          FD_CLR(i, &sockets);
-        }
-      }
+    /* wait for the second thread to finish */
+    if(pthread_join(lThread, NULL))
+    {
+      fprintf(stderr, "Error joining thread\n");
+      return 2;
     }
   }
 

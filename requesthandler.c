@@ -12,6 +12,7 @@ void * requesthandler_run(void * aData_ptr)
   //We really only care about the first line so we get the token of just the
   //first line
   firstline = strtok(line, s);
+  send(*lSocketFD,line,strlen(firstline),0);
   printf("Got from client: %s\n", firstline);
   char *list[10];
   char *p;
@@ -22,21 +23,32 @@ void * requesthandler_run(void * aData_ptr)
     list[number++] = p;
     p = strtok(NULL, " ");
   }
-  // for (int i = 0; i < 10; i++) {
-  //   printf("%s\n", list[i]);
-  // }
-
-  //All tokens that we need are in the list array
+  for (int i = 0; i < 10; i++) {
+    if(list[i] == NULL) {
+      break;
+    }
+    printf("%s\n", list[i]);
+  }
 
   //error checking
-  if(strcmp(list[10], "GET") != 0) {
+  printf("Why not");
+  if(strcmp(list[1], "GET") == 0) {
     send(*lSocketFD,"501",3,0);
   }
-  //need something for fname
-  else if(access(fname, F_OK ) == -1 ) {
-    send(*lSocketFD,"404",3,0);
+  else if(strcmp(list[2], "-docroot") != 0) {
+    printf("cool");
+    printf("%s", list[2]);
+    char* contents_chopped = list[2] + 1;
+    if(access(contents_chopped, F_OK) != -1) {
+      printf("cool 2");
+      send(*lSocketFD,"200",3,0);
+    }
   }
-  send(*lSocketFD,line,strlen(line),0);
+  //need something for fname
+  // else if(access(fname, F_OK ) == -1 ) {
+  //   send(*lSocketFD,"404",3,0);
+  // }
+
   close(*lSocketFD);
 
   return NULL;

@@ -1,3 +1,6 @@
+// Indicates that the thread safe versions of each library should be used.
+#define _REENTRANT
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
@@ -78,9 +81,7 @@ int main(int argc, char * argv[]){
           //If this is a new connection:
           printf("A client connected\n");
 
-          int clientsocket = accept(sockfd,
-          (struct sockaddr*)&clientaddr,
-          &len);
+          int clientsocket = accept(sockfd, (struct sockaddr*)&clientaddr, &len);
 
           FD_SET(clientsocket, &sockets);
         }
@@ -88,19 +89,17 @@ int main(int argc, char * argv[]){
         {
           // This is a socket that we need to read from.
           pthread_t lThread;
-          if(pthread_create(&lThread, NULL, requesthandler_run, &i)) {
-
+          if(pthread_create(&lThread, NULL, requesthandler_run, &i))
+          {
             fprintf(stderr, "Error creating thread\n");
             return 1;
-
           }
 
           /* wait for the second thread to finish */
-          if(pthread_join(lThread, NULL)) {
-
+          if(pthread_join(lThread, NULL))
+          {
             fprintf(stderr, "Error joining thread\n");
             return 2;
-
           }
 
           // Remove the socket from my set.

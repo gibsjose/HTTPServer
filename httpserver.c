@@ -1,12 +1,16 @@
 // Indicates that the thread safe versions of each library should be used.
 #define _REENTRANT
+#define _BSD_SOURCE
 
-#include <sys/socket.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/select.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <signal.h>
 #include <unistd.h>
 
 #include "requesthandler.h"
@@ -16,9 +20,12 @@
 #define MAX_CHAR_DOCROOT (1024)
 #define MAX_CHAR_LOGFILE (1024)
 
+int gServerSockfd;
+
 // Function declarations.
 void parse_args(int aNumArgs, char * aArgs[], unsigned * aPort, char ** aDocRoot,
                 char ** aLogFile);
+void sigint_handler();
 
 int main(int argc, char * argv[]){
   //Parse the arguments for the port, document root and log file.
@@ -32,10 +39,10 @@ int main(int argc, char * argv[]){
   printf("Document Root: \"%s\"\n", lDocRoot);
   printf("Log file: \"%s\"\n", lLogFile);
 
-  int sockfd=socket(AF_INET,SOCK_STREAM,0);
+  // Handle the CTRL + C (SIGINT) signal.
+  signal(SIGINT, sigint_handler);
 
-  fd_set sockets;
-  FD_ZERO(&sockets);
+  gServerSockfd=socket(AF_INET,SOCK_STREAM,0);
 
   //Create server/client address structures:
   // Server needs to know both the address of itself and the client
@@ -46,16 +53,36 @@ int main(int argc, char * argv[]){
 
   //Bind: Similar to 'connect()': Associating the socket with the address, without contacting the address
   //Bind, on the server side, tells all incoming data on the server address to go to the specified socket
-  bind(sockfd,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
+  int lRetVal_bind = bind(gServerSockfd,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
+  if (-1 == lRetVal_bind)
+  {
+    fprintf(stderr, "bind(): Bad doodoo.\n");
+    perror(strerror(errno));
+    return errno;
+  }
 
   //Listen:
   //  socket descriptor
   //  size of backlog of connections: Drop connections after N UNHANDLED connections
-  listen(sockfd,10);
+  int lRetVal_listen = listen(gServerSockfd,10);
+  if (-1 == lRetVal_listen)
+  {
+    fprintf(stderr, "listen(): Bad doodoo.\n");
+    perror(strerror(errno));
+    return errno;
+  }
 
   int len=sizeof(clientaddr);
+
   while(1){
-    int clientsocket = accept(sockfd, (struct sockaddr*)&clientaddr, &len);
+    printf("Waiting for connection...\n");
+    int clientsocket = accept(gServerSockfd, (struct sockaddr*)&clientaddr, &len);
+
+    if (-1 == clientsocket)
+    {
+      perror(strerror(errno));
+      return errno;
+    }
 
     //If this is a new connection:
     printf("A client connected\n");
@@ -67,14 +94,11 @@ int main(int argc, char * argv[]){
       fprintf(stderr, "Error creating thread\n");
       return 1;
     }
-
-    /* wait for the second thread to finish */
-    if(pthread_join(lThread, NULL))
-    {
-      fprintf(stderr, "Error joining thread\n");
-      return 2;
-    }
   }
+
+  // Close the main socket. (This will never get called though because of the
+  // infinite while loop above).
+  close(gServerSockfd);
 
   return 0;
 }
@@ -110,4 +134,17 @@ void parse_args(int aNumArgs, char * aArgs[], unsigned * aPort, char ** aDocRoot
       *aLogFile = lArgValue;
     }
   }
+}
+
+/*
+ * Handle the CTRL + C signal by cleaning up things before terminating.
+ */
+void sigint_handler()
+{
+  printf("Got a CTRL + C.  Closing shop...\n");
+
+  // Close the server socket.
+  close(gServerSockfd);
+
+  exit(0);
 }

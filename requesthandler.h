@@ -31,8 +31,8 @@ typedef struct key_value
 //TODO: Add hash table variable
 typedef struct request_data
 {
-    char rq_type[5000];
-    char rq_path[5000];
+    char type[5000];
+    char path[5000];
     char version[5000];
 } rqheader_t;
 
@@ -66,7 +66,7 @@ char* build_200(rqheader_t* request);
 int read_file(char * filepath, char* buffer);
 
 //TODO: Decide if we are keeping this function
-void get_date_header(void);
+char* get_date_header(void);
 
 
 

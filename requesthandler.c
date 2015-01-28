@@ -54,10 +54,13 @@ void * requesthandler_run(void * aData_ptr)
     // Build up a data stucture describing request
     // use parse_request function
     parse_request(&r_header, line);
+    char* response;
 
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
-
+    if(strcmp(r_header.type, "GET")) {
+        response = build_501();
+    }
     //3. Check if the file exists. If not send 404 response.
     //   Set the file path to appropriate html response page.
 
@@ -93,6 +96,7 @@ void * requesthandler_run(void * aData_ptr)
      */
 
     // TODO: Change me to intelligently close and exit.
+    free(response);
     close(*lSocketFD);
     pthread_exit(0);
 
@@ -106,20 +110,25 @@ void parse_request(rqheader_t* rq, char* buffer)
 {
     char *line, *line_end = NULL;
     char *token, *tok_end = NULL;
+    key_val_t *kv = malloc(sizeof(key_val_t));
+
 
     line = strtok_r(buffer, "\n", &line_end);
     log_info("line: %s\n", line);
     if(line != NULL) {
         token = strtok_r(line, " ", &tok_end);
-        memcpy(rq->rq_type, token, strlen(token) + 1);
+        memcpy(rq->type, token, strlen(token) + 1);
         token = strtok_r(NULL, " ", &tok_end);
-        memcpy(rq->rq_path, token, strlen(token) + 1);
+        memcpy(rq->path, token, strlen(token) + 1);
         token = strtok_r(NULL, " ", &tok_end);
         memcpy(rq->version, token, strlen(token) + 1);
 
+        memcpy(kv->key, "version", strlen("version") + 1);
+        memcpy(kv->value, rq->version, strlen(rq->version) + 1);
+        HASH_ADD_STR(hash, key, (kv));
     }
 
-    log_info("type: %s\npath: %s\nversion: %s\n", rq->rq_type, rq->rq_path, rq->version);
+    log_info("type: %s\npath: %s\nversion: %s\n", rq->type, rq->path, rq->version);
 
     while(1) {
         line = strtok_r(NULL, "\n", &line_end);
@@ -128,27 +137,58 @@ void parse_request(rqheader_t* rq, char* buffer)
         log_info("Newline: %s\n", line);
         token = strtok_r(line, ": ", &tok_end);
         if(token == NULL) break;
-        key_val_t kv;
-        memcpy(kv.key, token, strlen(token) + 1);
+        memcpy(kv->key, token, strlen(token) + 1);
         token = strtok_r(NULL, ": ", &tok_end);
         if(token == NULL) break;
-        memcpy(kv.value, token, strlen(token) + 1);
-        log_info("key: %s\nvalue: %s\n", kv.key, kv.value);
-        HASH_ADD_STR(hash, key, (&kv)); //-> operator has higher precedence than & operator so we need ()
+        memcpy(kv->value, token, strlen(token) + 1);
+        log_info("key: %s\nvalue: %s\n", kv->key, kv->value);
+        HASH_ADD_STR(hash, key, (kv)); //-> operator has higher precedence than & operator so we need ()
     }
+    free(kv);
+    log_info("Parse succeeded\n");
 }
 
+char* build_501(void)
+{
+    char* response = malloc(SOCKET_BUFFER_BYTES);
+    key_val_t *kv;
+    printf("155\n");
+    const char* ver = "version";
+    printf("KV1: %p\n", (void*)kv);
+    HASH_FIND_STR(hash, ver, kv);
+    printf("KV2: %p\n", (void*)kv);
+    sprintf(response, "%s 501 Not Implemented\r\n", kv->value);
+    printf("159\n");
 
+    char* str = get_date_header();
+    strcat(response, str);
+    free(str);
+    printf("164\n");
+
+    strcat(response, "Content-Type: text/html\r\n");
+    printf("167\n");
+
+    int bytes_read = 0;
+    char* file_buffer = malloc(MAX_FILE_SIZE_BYTES);
+    bytes_read = read_file("error_pages/501.html", file_buffer);
+    strcat(response, file_buffer);
+    strcat(response, "\r\n");
+
+    free(file_buffer);
+
+    return response;
+}
 
 //Header format
 //Date: Tue, 15 Nov 1994 08:12:31 GMT
 //gmtime(), tm struct
-void get_date_header()
+char* get_date_header()
 {
-    char buffer[500];
+    char* buffer = malloc(100 * sizeof(char));
     time_t current_time = time(NULL);
     struct tm * _tm = gmtime(&current_time);
-    strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S %Z", _tm);
+    strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S %Z\r\n", _tm);
+    return buffer;
 }
 
 int read_file(char * filepath, char * lBuffer)

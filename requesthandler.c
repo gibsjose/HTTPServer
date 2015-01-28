@@ -11,7 +11,7 @@ void * requesthandler_run(void * aData_ptr)
   timeout.tv_sec = SOCKET_READ_TIMEOUT_SEC;
   timeout.tv_usec = 0;
 
-  setsockopt(*lSocketFD, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,sizeof(struct timeval));
+  setsockopt(*lSocketFD, SOL_SOCKET, SO_RCVTIMEO, &timeout,sizeof(struct timeval));
 
   while(1)
   {

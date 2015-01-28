@@ -1,10 +1,13 @@
 #include "requesthandler.h"
+// Hash table global
+key_val_t * hash = NULL;
 
 void * requesthandler_run(void * aData_ptr)
 {
   //Dereference the void* pointer to be an int*.
   int * lSocketFD = (int *) aData_ptr;
   char line[SOCKET_BUFFER_BYTES];
+  rqheader_t r_header;
 
   // Set a read timeout on the socket.
   struct timeval timeout;
@@ -50,6 +53,7 @@ void * requesthandler_run(void * aData_ptr)
     //1. Parse the entire request header
     // Build up a data stucture describing request
     // use parse_request function
+    parse_request(&r_header, line);
 
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
@@ -96,6 +100,45 @@ void * requesthandler_run(void * aData_ptr)
     memset(&line, 0, SOCKET_BUFFER_BYTES);
   }
 }
+
+
+void parse_request(rqheader_t* rq, char* buffer)
+{
+    char *line, *line_end = NULL;
+    char *token, *tok_end = NULL;
+
+    line = strtok_r(buffer, "\n", &line_end);
+    log_info("line: %s\n", line);
+    if(line != NULL) {
+        token = strtok_r(line, " ", &tok_end);
+        memcpy(rq->rq_type, token, strlen(token) + 1);
+        token = strtok_r(NULL, " ", &tok_end);
+        memcpy(rq->rq_path, token, strlen(token) + 1);
+        token = strtok_r(NULL, " ", &tok_end);
+        memcpy(rq->version, token, strlen(token) + 1);
+
+    }
+
+    log_info("type: %s\npath: %s\nversion: %s\n", rq->rq_type, rq->rq_path, rq->version);
+
+    while(1) {
+        line = strtok_r(NULL, "\n", &line_end);
+        if(line == NULL) break;
+
+        log_info("Newline: %s\n", line);
+        token = strtok_r(line, ": ", &tok_end);
+        if(token == NULL) break;
+        key_val_t kv;
+        memcpy(kv.key, token, strlen(token) + 1);
+        token = strtok_r(NULL, ": ", &tok_end);
+        if(token == NULL) break;
+        memcpy(kv.value, token, strlen(token) + 1);
+        log_info("key: %s\nvalue: %s\n", kv.key, kv.value);
+        HASH_ADD_STR(hash, key, (&kv)); //-> operator has higher precedence than & operator so we need ()
+    }
+}
+
+
 
 //Header format
 //Date: Tue, 15 Nov 1994 08:12:31 GMT

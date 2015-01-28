@@ -5,6 +5,7 @@
 #define SOCKET_BUFFER_BYTES 50000
 #define MAX_FILE_SIZE_BYTES (50 * 1024 * 1024)
 
+#define _SVID_SOURCE
 #include <errno.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -15,26 +16,30 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <openssl/lhash.h>
+#include "uthash/src/uthash.h"
+#include "logger.h"
+
+
+typedef struct key_value
+{
+    char key[5000];
+    char value[5000];
+    UT_hash_handle hh;
+} key_val_t;
 
 //TODO: Add hash table variable
-struct request_data
+typedef struct request_data
 {
-    char* request_type;
-    char* request_path;
-    char* verison;
-    //hashtable variable
-    //Contents
-    //date:
-    //content-type:
-    //etc
-};
-
-typedef struct request_data rqheader_t;
+    char rq_type[5000];
+    char rq_path[5000];
+    char version[5000];
+} rqheader_t;
 
 void * requesthandler_run(void * aData_ptr);
 
 //Parse the entire request into request_data structure
-rqheader_t parse_request(char* buffer);
+void parse_request(rqheader_t * request, char* buffer);
 
 //Read appropriate html file for response 501.html
 //Append file content to response

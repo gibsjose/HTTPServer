@@ -81,6 +81,7 @@ void * requesthandler_run(void * aData_ptr)
       printf("Sent %lu bytes.\n", lRetVal_send);
     }
 
+
     /*
      * In HTTP 1.1 all connections are considered persistent unless declared otherwise.
      * http://en.wikipedia.org/wiki/HTTP_persistent_connection
@@ -101,8 +102,10 @@ void * requesthandler_run(void * aData_ptr)
 //gmtime(), tm struct
 void get_date_header()
 {
-    //time_t cur_time = time(NULL);
-    //struct tm tm = gmtime(&cur_time);
+    char buffer[500];
+    time_t current_time = time(NULL);
+    struct tm * _tm = gmtime(&current_time);
+    strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S %Z", _tm);
 }
 
 int read_file(char * filepath, char * lBuffer)

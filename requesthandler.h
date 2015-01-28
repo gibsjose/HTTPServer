@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
 
 //TODO: Add hash table variable
 struct request_data

@@ -62,24 +62,35 @@ void log_error(const char * aMessage, ...)
 
 
 /*
- * Write the log message to the file with the prefix prepended to the message.
+ * Write the log message to the file with the timestamp and prefix prepended to
+ * the message.
  */
 void log_write(const char * aPrefix, const char * aMessage, va_list aArgs)
 {
   // Prepend the datetime and prefix to the log message indicating its log level.
-  // time_t t = time(NULL);
-  // struct tm tm = *localtime(&t);
-  // printf("now: %d-%d-%d %d:%d:%d\n",
-  //   tm.tm_year + 1900,
-  //   tm.tm_mon + 1,
-  //   tm.tm_mday,
-  //   tm.tm_hour,
-  //   tm.tm_min,
-  //   tm.tm_sec
-  // );
-
-  char * lNewMessage = malloc( (strlen(aPrefix) + strlen(aMessage) + 1) * sizeof(char));
-  strcpy(lNewMessage, aPrefix);
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  char * lTimeStr = "%02d-%02d-%02d %02d:%02d:%02d";
+  char * lNewMessage = malloc(
+    (strlen(lTimeStr) +
+     strlen(aPrefix) +
+     (2 * strlen(LOG_FIELD_SEPARATOR)) +
+     strlen(aMessage) + 1
+    ) * sizeof(char)
+  );
+  sprintf(
+    lNewMessage,
+    lTimeStr,
+    tm.tm_year + 1900,
+    tm.tm_mon + 1,
+    tm.tm_mday,
+    tm.tm_hour,
+    tm.tm_min,
+    tm.tm_sec
+  );
+  strcat(lNewMessage, LOG_FIELD_SEPARATOR);
+  strcat(lNewMessage, aPrefix);
+  strcat(lNewMessage, LOG_FIELD_SEPARATOR);
   strcat(lNewMessage, aMessage);
 
   //Lock before attempting to write to the log file so that writing is thread safe.

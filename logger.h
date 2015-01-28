@@ -1,8 +1,9 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#define LOG_LEVEL_INFO "INFO: "
-#define LOG_LEVEL_ERROR "ERROR: "
+#define LOG_FIELD_SEPARATOR "^"
+#define LOG_LEVEL_INFO "INFO"
+#define LOG_LEVEL_ERROR "ERROR"
 
 #include <stdarg.h>
 #include <stdlib.h>

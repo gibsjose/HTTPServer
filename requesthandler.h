@@ -26,9 +26,9 @@ struct request_data
     //date:
     //content-type:
     //etc
-}
+};
 
-#typedef struct request_data rqheader_t;
+typedef struct request_data rqheader_t;
 
 void * requesthandler_run(void * aData_ptr);
 //Parse the entire request into request_data structure

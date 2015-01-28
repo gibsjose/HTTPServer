@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -14,6 +15,7 @@
 #include <unistd.h>
 
 #include "requesthandler.h"
+#include "logger.h"
 
 #define DEFAULT_SERVER_PORT (8080)
 #define DEFAULT_DOCROOT ("./")
@@ -34,10 +36,13 @@ int main(int argc, char * argv[]){
   char * lLogFile;
   parse_args(argc, argv, &lPort, &lDocRoot, &lLogFile);
 
+  // Initialize logging.
+  log_init(lLogFile);
+
   //TODO: Remove this debugging print block.
-  printf("Port: %u\n", lPort);
-  printf("Document Root: \"%s\"\n", lDocRoot);
-  printf("Log file: \"%s\"\n", lLogFile);
+  log_info("Port: %u\n", lPort);
+  log_info("Document Root: \"%s\"\n", lDocRoot);
+  log_info("Log file: \"%s\"\n", lLogFile);
 
   // Handle the CTRL + C (SIGINT) signal.
   signal(SIGINT, sigint_handler);
@@ -56,8 +61,8 @@ int main(int argc, char * argv[]){
   int lRetVal_bind = bind(gServerSockfd,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
   if (-1 == lRetVal_bind)
   {
-    fprintf(stderr, "bind(): Bad doodoo.\n");
-    perror(strerror(errno));
+    log_error("bind(): Bad doodoo.\n");
+    log_error(strerror(errno));
     return errno;
   }
 
@@ -67,31 +72,32 @@ int main(int argc, char * argv[]){
   int lRetVal_listen = listen(gServerSockfd,10);
   if (-1 == lRetVal_listen)
   {
-    fprintf(stderr, "listen(): Bad doodoo.\n");
-    perror(strerror(errno));
+    log_error("listen(): Bad doodoo.\n");
+    log_error(strerror(errno));
     return errno;
   }
 
   int len=sizeof(clientaddr);
 
   while(1){
-    printf("Waiting for connection...\n");
+    log_info("Waiting for connection...\n");
     int clientsocket = accept(gServerSockfd, (struct sockaddr*)&clientaddr, &len);
 
     if (-1 == clientsocket)
     {
-      perror(strerror(errno));
+      log_error("accept(): Bad doodoo.\n");
+      log_error(strerror(errno));
       return errno;
     }
 
     //If this is a new connection:
-    printf("A client connected\n");
+    log_info("A client connected\n");
 
     // This is a socket that we need to read from.
     pthread_t lThread;
     if(pthread_create(&lThread, NULL, requesthandler_run, &clientsocket))
     {
-      fprintf(stderr, "Error creating thread\n");
+      log_error("pthread_create(): Error creating thread\n");
       return 1;
     }
   }
@@ -114,7 +120,7 @@ void parse_args(int aNumArgs, char * aArgs[], unsigned * aPort, char ** aDocRoot
   // the argument list.
   *aPort = DEFAULT_SERVER_PORT;
   *aDocRoot = DEFAULT_DOCROOT;
-  *aLogFile = "";
+  *aLogFile = NULL;
 
   for(int i = 1; i + 1 < aNumArgs; i = i + 2)
   {
@@ -145,6 +151,9 @@ void sigint_handler()
 
   // Close the server socket.
   close(gServerSockfd);
+
+  // Close the log.
+  log_close();
 
   exit(0);
 }

@@ -11,7 +11,7 @@ BIN = httpserver
 _DEPS =
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = httpserver.o requesthandler.o
+_OBJ = httpserver.o requesthandler.o logger.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 all: setup $(BIN)

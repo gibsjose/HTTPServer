@@ -16,24 +16,21 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
-#include <openssl/lhash.h>
-#include "uthash/src/uthash.h"
+
+#include <string>
+#include <map>
+
 #include "logger.h"
 
+typedef std::map<std::string, std::string> header_map_t;
+typedef std::pair<std::string, std::string> header_pair_t;
 
-typedef struct key_value
-{
-    char key[5000];
-    char value[5000];
-    UT_hash_handle hh;
-} key_val_t;
-
-//TODO: Add hash table variable
 typedef struct request_data
 {
     char type[5000];
     char path[5000];
     char version[5000];
+    header_map_t header_map;
 } rqheader_t;
 
 void * requesthandler_run(void * aData_ptr);

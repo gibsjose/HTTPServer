@@ -1,6 +1,6 @@
 IDIR =
-CC = gcc
-CFLAGS = -I$(IDIR) -Wall -g -std=c99
+CC = g++
+CFLAGS = -I$(IDIR) -Wall -g -std=c++0x
 
 ODIR = obj
 LDIR = ../lib
@@ -16,11 +16,11 @@ OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 all: setup $(BIN)
 
-$(ODIR)/%.o: %.c $(DEPS)
+$(ODIR)/%.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 httpserver: $(OBJ)
-	gcc -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: clean setup
 

@@ -27,7 +27,7 @@ int gServerSockfd;
 // Function declarations.
 void parse_args(int aNumArgs, char * aArgs[], unsigned * aPort, char ** aDocRoot,
                 char ** aLogFile);
-void sigint_handler();
+void sigint_handler(int);
 
 int main(int argc, char * argv[]){
   //Parse the arguments for the port, document root and log file.
@@ -77,7 +77,7 @@ int main(int argc, char * argv[]){
     return errno;
   }
 
-  int len=sizeof(clientaddr);
+  unsigned int len = sizeof(clientaddr);
 
   while(1){
     log_info("Waiting for connection...\n");
@@ -145,7 +145,7 @@ void parse_args(int aNumArgs, char * aArgs[], unsigned * aPort, char ** aDocRoot
 /*
  * Handle the CTRL + C signal by cleaning up things before terminating.
  */
-void sigint_handler()
+void sigint_handler(int signum)
 {
   printf("Got a CTRL + C.  Closing shop...\n");
 

@@ -1,6 +1,4 @@
 #include "requesthandler.h"
-// Hash table global
-key_val_t * hash = NULL;
 
 void * requesthandler_run(void * aData_ptr)
 {
@@ -110,8 +108,6 @@ void parse_request(rqheader_t* rq, char* buffer)
 {
     char *line, *line_end = NULL;
     char *token, *tok_end = NULL;
-    key_val_t *kv = malloc(sizeof(key_val_t));
-
 
     line = strtok_r(buffer, "\n", &line_end);
     log_info("line: %s\n", line);
@@ -122,10 +118,6 @@ void parse_request(rqheader_t* rq, char* buffer)
         memcpy(rq->path, token, strlen(token) + 1);
         token = strtok_r(NULL, " ", &tok_end);
         memcpy(rq->version, token, strlen(token) + 1);
-
-        memcpy(kv->key, "version", strlen("version") + 1);
-        memcpy(kv->value, rq->version, strlen(rq->version) + 1);
-        HASH_ADD_STR(hash, key, (kv));
     }
 
     log_info("type: %s\npath: %s\nversion: %s\n", rq->type, rq->path, rq->version);
@@ -134,42 +126,34 @@ void parse_request(rqheader_t* rq, char* buffer)
         line = strtok_r(NULL, "\n", &line_end);
         if(line == NULL) break;
 
-        log_info("Newline: %s\n", line);
-        token = strtok_r(line, ": ", &tok_end);
-        if(token == NULL) break;
-        memcpy(kv->key, token, strlen(token) + 1);
-        token = strtok_r(NULL, ": ", &tok_end);
-        if(token == NULL) break;
-        memcpy(kv->value, token, strlen(token) + 1);
-        log_info("key: %s\nvalue: %s\n", kv->key, kv->value);
-        HASH_ADD_STR(hash, key, (kv)); //-> operator has higher precedence than & operator so we need ()
+        //Get key
+        char * key = strtok_r(line, ": ", &tok_end);
+        if(key == NULL) break;
+
+        //Get value
+        char * value = strtok_r(NULL, ": ", &tok_end);
+        if(value == NULL) break;
+
+        //Insert the key/value pair into the header map
+        rq->header_map.insert(header_pair_t(std::string(key), std::string(value)));
     }
-    free(kv);
+
     log_info("Parse succeeded\n");
 }
 
 char* build_501(void)
 {
-    char* response = malloc(SOCKET_BUFFER_BYTES);
-    key_val_t *kv;
-    printf("155\n");
+    char* response = (char *)malloc(SOCKET_BUFFER_BYTES);
     const char* ver = "version";
-    printf("KV1: %p\n", (void*)kv);
-    HASH_FIND_STR(hash, ver, kv);
-    printf("KV2: %p\n", (void*)kv);
-    sprintf(response, "%s 501 Not Implemented\r\n", kv->value);
-    printf("159\n");
 
     char* str = get_date_header();
     strcat(response, str);
     free(str);
-    printf("164\n");
 
     strcat(response, "Content-Type: text/html\r\n");
-    printf("167\n");
 
     int bytes_read = 0;
-    char* file_buffer = malloc(MAX_FILE_SIZE_BYTES);
+    char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
     bytes_read = read_file("error_pages/501.html", file_buffer);
     strcat(response, file_buffer);
     strcat(response, "\r\n");
@@ -184,7 +168,7 @@ char* build_501(void)
 //gmtime(), tm struct
 char* get_date_header()
 {
-    char* buffer = malloc(100 * sizeof(char));
+    char* buffer = (char *)malloc(100 * sizeof(char));
     time_t current_time = time(NULL);
     struct tm * _tm = gmtime(&current_time);
     strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S %Z\r\n", _tm);

@@ -71,7 +71,7 @@ void log_write(const char * aPrefix, const char * aMessage, va_list aArgs)
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
   char * lTimeStr = "%02d-%02d-%02d %02d:%02d:%02d";
-  char * lNewMessage = malloc(
+  char * lNewMessage = (char *)malloc(
     (strlen(lTimeStr) +
      strlen(aPrefix) +
      (2 * strlen(LOG_FIELD_SEPARATOR)) +

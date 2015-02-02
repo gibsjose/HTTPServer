@@ -184,8 +184,6 @@ std::string build_501(rqheader_t rq) {
 
     date = get_date_header();
 
-    //std::cout << "rq.version = " << rq.version << std::endl;
-
     oss << "HTTP/1.1" << " 501" << " Not Implemented\r\n";
     oss << "Date: " << std::string(date);
     oss << "Content-Type: text/html\r\n";
@@ -251,9 +249,11 @@ std::string build_304(rqheader_t rq) {
 std::string build_200(rqheader_t rq, const std::string &filepath) {
     std::ostringstream oss;
     char * date;
+    char *lastModified;
     std::string contentType;
 
     date = get_date_header();
+    lastModified = get_last_modified(filepath.c_str());
     const char *ext = get_filename_ext(filepath.c_str());
 
     if(!strcmp(ext, "html")) {
@@ -286,6 +286,7 @@ std::string build_200(rqheader_t rq, const std::string &filepath) {
 
     oss << "HTTP/1.1" << " 200" << " OK\r\n";
     oss << "Date: " << std::string(date);
+    oss << "Last-Modified: " << std::string(lastModified);
     oss << "Content-Type: " << contentType << "\r\n";
     oss << "Content-Length: " << bytes_read << "\r\n";
     oss << "\r\n";
@@ -316,13 +317,21 @@ char* get_date_header()
     return buffer;
 }
 
+char *get_last_modified(const char *file) {
+    char* buffer = (char *)malloc(100 * sizeof(char));
+    struct stat st;
+    stat(file, &st);
+    struct tm * _tm = gmtime(&(st.st_mtime));
+    strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S GMT\r\n", _tm);
+    return buffer;
+}
+
 //Taken from SO: http://stackoverflow.com/questions/5309471/getting-file-extension-in-c
 const char *get_filename_ext(const char *filename) {
     const char *dot = strrchr(filename, '.');
     if(!dot || dot == filename) return "";
     return dot + 1;
 }
-
 
 int read_file(std::string filepath, char * lBuffer)
 {

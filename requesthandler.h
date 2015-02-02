@@ -80,4 +80,7 @@ bool modified_since(const std::string &path, const std::string &time_str);
 //Gets the extension of a file
 const char *get_filename_ext(const char *filename);
 
+//Gets the string denoting the last modified time of the file
+char *get_last_modified(const char *file);
+
 #endif

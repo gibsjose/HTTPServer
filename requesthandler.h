@@ -25,11 +25,10 @@
 typedef std::map<std::string, std::string> header_map_t;
 typedef std::pair<std::string, std::string> header_pair_t;
 
-typedef struct request_data
-{
-    char type[5000];
-    char path[5000];
-    char version[5000];
+typedef struct request_data {
+    std::string type;
+    std::string path;
+    std::string version;
     header_map_t header_map;
 } rqheader_t;
 

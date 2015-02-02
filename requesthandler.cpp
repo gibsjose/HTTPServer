@@ -113,11 +113,13 @@ void parse_request(rqheader_t* rq, char* buffer)
     log_info("line: %s\n", line);
     if(line != NULL) {
         token = strtok_r(line, " ", &tok_end);
-        memcpy(rq->type, token, strlen(token) + 1);
+        rq->type = std::string(token);
+
         token = strtok_r(NULL, " ", &tok_end);
-        memcpy(rq->path, token, strlen(token) + 1);
+        rq->path = std::string(token);
+
         token = strtok_r(NULL, " ", &tok_end);
-        memcpy(rq->version, token, strlen(token) + 1);
+        rq->version = std::string(token);
     }
 
     log_info("type: %s\npath: %s\nversion: %s\n", rq->type, rq->path, rq->version);
@@ -139,6 +141,12 @@ void parse_request(rqheader_t* rq, char* buffer)
     }
 
     log_info("Parse succeeded\n");
+
+    // std::map<std::string, std::string>::iterator it;
+    // printf("Map contents:\n");
+    // for(it = rq->header_map.begin(); it != rq->header_map.end(); it++) {
+    //     printf("header_map[%s] = %s\n", it->first.c_str(), it->second.c_str());
+    // }
 }
 
 char* build_501(void)

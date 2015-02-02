@@ -59,6 +59,8 @@ void * requesthandler_run(void * aData_ptr)
     std::string resp;
     std::string filepath = docroot + "/" + r_header.path;
 
+    resp.clear();
+
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
     if(strcmp(r_header.type.c_str(), "GET")) {
@@ -89,7 +91,7 @@ void * requesthandler_run(void * aData_ptr)
         resp = build_200(r_header, filepath);
     }
 
-    size_t lRetVal_send = send(lSocketFD, resp.c_str(), strlen(resp.c_str()), 0);
+    size_t lRetVal_send = send(lSocketFD, resp.c_str(), resp.length(), 0);
     if(-1 == lRetVal_send) {
       fprintf(stderr, "send(): Error\n");
       perror(strerror(errno));
@@ -97,7 +99,6 @@ void * requesthandler_run(void * aData_ptr)
     } else {
       printf("Sent %lu bytes.\n", lRetVal_send);
     }
-
 
     /*
     * In HTTP 1.1 all connections are considered persistent unless declared otherwise.
@@ -289,15 +290,16 @@ std::string build_200(rqheader_t rq, const std::string &filepath) {
     oss << "Content-Length: " << bytes_read << "\r\n";
     oss << "\r\n";
 
-    oss << std::string(file_buffer);
+    std::cout << "Response (No Content): \n-----------------" << std::endl;
+    std::cout << oss.str() << std::endl;
+
+    oss << std::string(file_buffer, bytes_read);
 
     free(file_buffer);
 
     std::string response = oss.str();
 
-    std::cout << "Response: \n-----------------" << std::endl;
-
-    std::cout << response;
+    std::cout << "response.size() = " << response.size() << std::endl;
 
     return response;
 }

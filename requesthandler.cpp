@@ -54,11 +54,14 @@ void * requesthandler_run(void * aData_ptr)
     parse_request(&r_header, line);
     char* response;
 
+    std::string resp;
+
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
-    if(strcmp(r_header.type.c_str(), "GET")) {
-        response = build_501();
-    }
+    //if(strcmp(r_header.type.c_str(), "GET")) {
+        resp = build_501(r_header);
+    //}
+
     //3. Check if the file exists. If not send 404 response.
     //   Set the file path to appropriate html response page.
 
@@ -74,7 +77,7 @@ void * requesthandler_run(void * aData_ptr)
 
     // TODO: Change me.  I just send back the same data I was sent.
     printf("Sending...\n");
-    size_t lRetVal_send = send(*lSocketFD,line,strlen(line),0);
+    size_t lRetVal_send = send(*lSocketFD,resp.c_str(),strlen(resp.c_str()),0);
     if(-1 == lRetVal_send)
     {
       fprintf(stderr, "send(): Bad doodoo.\n");
@@ -122,6 +125,8 @@ void parse_request(rqheader_t* rq, char* buffer)
         rq->version = std::string(token);
     }
 
+    //std::cout << "Type: " << rq->type << " Path: " << rq->path << " Version: " << rq->version << std::endl;
+
     log_info("type: %s\npath: %s\nversion: %s\n", rq->type.c_str(), rq->path.c_str(), rq->version.c_str());
 
     while(1) {
@@ -149,24 +154,30 @@ void parse_request(rqheader_t* rq, char* buffer)
     // }
 }
 
-char* build_501(void)
-{
-    char* response = (char *)malloc(SOCKET_BUFFER_BYTES);
-    const char* ver = "version";
+std::string & build_501(rqheader_t rq) {
+    std::ostringstream oss;
+    char * date;
 
-    char* str = get_date_header();
-    strcat(response, str);
-    free(str);
+    date = get_date_header();
 
-    strcat(response, "Content-Type: text/html\r\n");
+    //std::cout << "rq.version = " << rq.version << std::endl;
 
-    int bytes_read = 0;
+    oss << "HTTP/1.1" << " 501" << " Not Implemented\r\n";
+    oss << std::string(date);
+    oss << "Content-Type: text/html\r\n";
+    oss << "\r\n";
+
+    //Read in 501 error file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
-    bytes_read = read_file("error_pages/501.html", file_buffer);
-    strcat(response, file_buffer);
-    strcat(response, "\r\n");
+    int bytes_read = read_file("error_pages/501.html", file_buffer);
+
+    oss << std::string(file_buffer) << "\r\n";
 
     free(file_buffer);
+
+    std::string response = oss.str();
+
+    std::cout << response;
 
     return response;
 }
@@ -179,7 +190,7 @@ char* get_date_header()
     char* buffer = (char *)malloc(100 * sizeof(char));
     time_t current_time = time(NULL);
     struct tm * _tm = gmtime(&current_time);
-    strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S %Z\r\n", _tm);
+    strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S GMT\r\n", _tm);
     return buffer;
 }
 

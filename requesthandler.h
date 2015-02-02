@@ -16,6 +16,8 @@
 #include <pthread.h>
 #include <time.h>
 
+#include <iostream>
+#include <sstream>
 #include <string>
 #include <map>
 
@@ -39,7 +41,7 @@ void parse_request(rqheader_t * request, char* buffer);
 //Read appropriate html file for response 501.html
 //Append file content to response
 //Return pointer to response buffer
-char* build_501(void);
+std::string & build_501(rqheader_t rq);
 
 //Read appropriate html file for response 404.html
 //Append file content to response

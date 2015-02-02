@@ -62,7 +62,7 @@ int main(int argc, char * argv[]){
   int lRetVal_bind = bind(gServerSockfd,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
   if (-1 == lRetVal_bind)
   {
-    log_error("bind(): Bad doodoo.\n");
+    log_error("bind(): Error\n");
     log_error(strerror(errno));
     return errno;
   }
@@ -73,7 +73,7 @@ int main(int argc, char * argv[]){
   int lRetVal_listen = listen(gServerSockfd,10);
   if (-1 == lRetVal_listen)
   {
-    log_error("listen(): Bad doodoo.\n");
+    log_error("listen(): Error\n");
     log_error(strerror(errno));
     return errno;
   }
@@ -87,7 +87,7 @@ int main(int argc, char * argv[]){
 
     if (-1 == clientsocket)
     {
-      log_error("accept(): Bad doodoo.\n");
+      log_error("accept(): Error\n");
       log_error(strerror(errno));
       return errno;
     }

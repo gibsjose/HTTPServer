@@ -29,7 +29,7 @@ void * requesthandler_run(void * aData_ptr)
     else if(-1 == lRetVal_recv)
     {
       //some other error
-      fprintf(stderr, "recv(): Bad doodoo.\n");
+      fprintf(stderr, "recv(): Error\n");
       perror(strerror(errno));
       pthread_exit(NULL);
     }
@@ -55,7 +55,6 @@ void * requesthandler_run(void * aData_ptr)
     // Build up a data stucture describing request
     // use parse_request function
     parse_request(&r_header, line);
-    char* response;
 
     std::string resp;
     std::string filepath = docroot + "/" + r_header.path;
@@ -69,7 +68,7 @@ void * requesthandler_run(void * aData_ptr)
 
     //3. Check if the file exists. If not send 404 response.
     //   Set the file path to appropriate html response page.
-    if(!file_exists(filepath)) {
+    else if(!file_exists(filepath)) {
         std::cout << "File " << filepath << " not found... 404" << std::endl;
         resp = build_404(r_header);
     }
@@ -77,43 +76,38 @@ void * requesthandler_run(void * aData_ptr)
     //4. Check for if-modified-since header in the request. If found and the requested
     //   file has not been modified, send a 304 response.
     //   Set the file path to appropriate html response page. (probably no page for this so filepath null)
-    if(r_header.header_map.find("if-modified-since") != r_header.header_map.end()) {
-        //if(!modified_since(r_header.header_map["if-modified-since"])) {
-            std::cout << "File " << filepath << " not modified since " << r_header.header_map["if-modified-since"] << "... 404" << std::endl;
+    else if(r_header.header_map.find("if-modified-since") != r_header.header_map.end()) {
+        if(modified_since(filepath, r_header.header_map["if-modified-since"])) {
+            std::cout << "File " << filepath << " modified since " << r_header.header_map["if-modified-since"] << "... 304" << std::endl;
             resp = build_304(r_header);
-        //}
+        }
     }
 
     //5. Create status 200 reponse.
     //   Set the file path to appropriate html response page (requested page)
+    else {
+        resp = build_200(r_header, filepath);
+    }
 
-    //6. Read the appropriate file (filepath variable set by the responses)
-
-
-    // TODO: Change me.  I just send back the same data I was sent.
-    printf("Sending...\n");
-    size_t lRetVal_send = send(lSocketFD,resp.c_str(),strlen(resp.c_str()),0);
-    if(-1 == lRetVal_send)
-    {
-      fprintf(stderr, "send(): Bad doodoo.\n");
+    size_t lRetVal_send = send(lSocketFD, resp.c_str(), strlen(resp.c_str()), 0);
+    if(-1 == lRetVal_send) {
+      fprintf(stderr, "send(): Error\n");
       perror(strerror(errno));
       pthread_exit(NULL);
-    }
-    else
-    {
+    } else {
       printf("Sent %lu bytes.\n", lRetVal_send);
     }
 
 
     /*
-     * In HTTP 1.1 all connections are considered persistent unless declared otherwise.
-     * http://en.wikipedia.org/wiki/HTTP_persistent_connection
-     * So close the socket if the Connection: close header is sent.
-     */
+    * In HTTP 1.1 all connections are considered persistent unless declared otherwise.
+    * http://en.wikipedia.org/wiki/HTTP_persistent_connection
+    * So close the socket if the Connection: close header is sent.
+    */
+    if(r_header.header_map["Connection"] != "keep-alive") {
+        close(lSocketFD);
+    }
 
-    // TODO: Change me to intelligently close and exit.
-    free(response);
-    close(lSocketFD);
     pthread_exit(0);
 
     // Clear the buffer for reading from the client socket.
@@ -124,6 +118,26 @@ void * requesthandler_run(void * aData_ptr)
 bool file_exists(const std::string &path) {
     int ret = access(path.c_str(), R_OK);
     return (ret != -1);
+}
+
+bool modified_since(const std::string &path, const std::string &time_str) {
+    struct stat st;
+    stat(path.c_str(), &st);
+
+    time_t modified = st.st_mtime;
+    struct tm tm;
+    time_t check;
+
+    //Convert the string to a time_t
+    strptime(time_str.c_str(), "%a, %d, %b %Y %H:%M:%S GMT\r\n", &tm);
+
+    check = mktime(&tm);
+
+    if(difftime(modified, check) > 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 void parse_request(rqheader_t* rq, char* buffer)
@@ -144,8 +158,6 @@ void parse_request(rqheader_t* rq, char* buffer)
         rq->version = std::string(token);
     }
 
-    //std::cout << "Type: " << rq->type << " Path: " << rq->path << " Version: " << rq->version << std::endl;
-
     log_info("type: %s\npath: %s\nversion: %s\n", rq->type.c_str(), rq->path.c_str(), rq->version.c_str());
 
     while(1) {
@@ -163,14 +175,6 @@ void parse_request(rqheader_t* rq, char* buffer)
         //Insert the key/value pair into the header map
         rq->header_map.insert(header_pair_t(std::string(key), std::string(value)));
     }
-
-    log_info("Parse succeeded\n");
-
-    // std::map<std::string, std::string>::iterator it;
-    // printf("Map contents:\n");
-    // for(it = rq->header_map.begin(); it != rq->header_map.end(); it++) {
-    //     printf("header_map[%s] = %s\n", it->first.c_str(), it->second.c_str());
-    // }
 }
 
 std::string build_501(rqheader_t rq) {
@@ -205,8 +209,6 @@ std::string build_404(rqheader_t rq) {
     std::ostringstream oss;
     char * date;
 
-    std::cout << "I'm in the 404 header function!" << std::endl;
-
     date = get_date_header();
 
     oss << "HTTP/1.1" << " 404" << " Not Found\r\n";
@@ -214,7 +216,7 @@ std::string build_404(rqheader_t rq) {
     oss << "Content-Type: text/html\r\n";
     oss << "\r\n";
 
-    //Read in 501 error file
+    //Read in 404 error file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
     int bytes_read = read_file("error_pages/404.html", file_buffer);
 
@@ -230,13 +232,69 @@ std::string build_404(rqheader_t rq) {
 }
 
 std::string build_304(rqheader_t rq) {
-    std::string response;
+    std::ostringstream oss;
+    char * date;
+
+    date = get_date_header();
+
+    oss << "HTTP/1.1" << " 304" << " Not Modified\r\n";
+    oss << std::string(date);
+    oss << "\r\n";
+
+    std::string response = oss.str();
+    std::cout << response;
 
     return response;
 }
 
-std::string build_200(rqheader_t rq) {
-    std::string response;
+std::string build_200(rqheader_t rq, const std::string &filepath) {
+    std::ostringstream oss;
+    char * date;
+    std::string contentType;
+
+    date = get_date_header();
+    const char *ext = get_filename_ext(filepath.c_str());
+
+    if(!strcmp(ext, "html")) {
+        contentType = "text/html";
+    }
+
+    else if(!strcmp(ext, "txt")) {
+        contentType = "text/plain";
+    }
+
+    else if(!strcmp(ext, "jpg")) {
+        contentType = "image/jpg";
+    }
+
+    else if(!strcmp(ext, "jpeg")) {
+        contentType = "image/jpeg";
+    }
+
+    else if(!strcmp(ext, "pdf")) {
+        contentType = "application/pdf";
+    }
+
+    else {
+        contentType = "text/plain";
+    }
+
+    oss << "HTTP/1.1" << " 200" << " OK\r\n";
+    oss << std::string(date);
+    oss << "Content-Type: " << contentType << "\r\n";
+    oss << "\r\n";
+
+    //Read in file
+    char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
+    int bytes_read = read_file(filepath.c_str(), file_buffer);
+
+    oss << std::string(file_buffer) << "\r\n";
+
+    free(file_buffer);
+
+    std::string response = oss.str();
+
+    std::cout << response;
 
     return response;
 }
@@ -252,6 +310,14 @@ char* get_date_header()
     strftime(buffer, 500, "%a, %d, %b %Y %H:%M:%S GMT\r\n", _tm);
     return buffer;
 }
+
+//Taken from SO: http://stackoverflow.com/questions/5309471/getting-file-extension-in-c
+const char *get_filename_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return "";
+    return dot + 1;
+}
+
 
 int read_file(std::string filepath, char * lBuffer)
 {

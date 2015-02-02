@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -61,7 +62,7 @@ std::string build_304(rqheader_t rq);
 //Read the requested file
 //Append file content to response
 //Return pointer to response buffer
-std::string build_200(rqheader_t request);
+std::string build_200(rqheader_t request, const std::string &);
 
 //Return content length if read successful
 //Otherwise return some negative indicating error
@@ -73,5 +74,10 @@ char* get_date_header(void);
 //Checks whether a file exists at the given path
 bool file_exists(const std::string &);
 
+//Checks to see if the file at 'path' has been modified since the 'time_str'
+bool modified_since(const std::string &path, const std::string &time_str);
+
+//Gets the extension of a file
+const char *get_filename_ext(const char *filename);
 
 #endif

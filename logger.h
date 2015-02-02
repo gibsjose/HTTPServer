@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <string>
 
 void log_init(const char * aFilename);
 void log_close();

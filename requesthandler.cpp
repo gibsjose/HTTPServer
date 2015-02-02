@@ -183,10 +183,10 @@ char* get_date_header()
     return buffer;
 }
 
-int read_file(char * filepath, char * lBuffer)
+int read_file(std::string filepath, char * lBuffer)
 {
     size_t lTotalBytesRead = 0;
-    FILE * lFilePtr = fopen(filepath, "rb");
+    FILE * lFilePtr = fopen(filepath.c_str(), "rb");
 
     if(lFilePtr == 0) {
         perror(strerror(errno));

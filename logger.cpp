@@ -70,9 +70,9 @@ void log_write(const char * aPrefix, const char * aMessage, va_list aArgs)
   // Prepend the datetime and prefix to the log message indicating its log level.
   time_t t = time(NULL);
   struct tm tm = *localtime(&t);
-  char * lTimeStr = "%02d-%02d-%02d %02d:%02d:%02d";
+  std::string lTimeStr = "%02d-%02d-%02d %02d:%02d:%02d";
   char * lNewMessage = (char *)malloc(
-    (strlen(lTimeStr) +
+    (lTimeStr.length() +
      strlen(aPrefix) +
      (2 * strlen(LOG_FIELD_SEPARATOR)) +
      strlen(aMessage) + 1
@@ -80,7 +80,7 @@ void log_write(const char * aPrefix, const char * aMessage, va_list aArgs)
   );
   sprintf(
     lNewMessage,
-    lTimeStr,
+    lTimeStr.c_str(),
     tm.tm_year + 1900,
     tm.tm_mon + 1,
     tm.tm_mday,

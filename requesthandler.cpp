@@ -147,11 +147,16 @@ bool modified_since(const std::string &path, const std::string &time_str) {
 
 void parse_request(rqheader_t* rq, char* buffer)
 {
+    //Log the request header.
+    log_info("Request: -------------------------------------------\n");
+    log_info(buffer);
+    log_info("-------------------------------------------\n");
+
     char *line, *line_end = NULL;
     char *token, *tok_end = NULL;
 
     line = strtok_r(buffer, "\n", &line_end);
-    log_info("line: %s\n", line);
+
     if(line != NULL) {
         token = strtok_r(line, " ", &tok_end);
         rq->type = std::string(token);
@@ -162,8 +167,6 @@ void parse_request(rqheader_t* rq, char* buffer)
         token = strtok_r(NULL, " ", &tok_end);
         rq->version = std::string(token);
     }
-
-    log_info("type: %s\npath: %s\nversion: %s\n", rq->type.c_str(), rq->path.c_str(), rq->version.c_str());
 
     while(1) {
         line = strtok_r(NULL, "\n", &line_end);
@@ -193,6 +196,11 @@ std::string build_501(rqheader_t rq) {
     oss << "Content-Type: text/html\r\n";
     oss << "\r\n";
 
+    //Log the response header.
+    log_info("Response: -------------------------------------------\n");
+    log_info(oss.str().c_str());
+    log_info("-------------------------------------------\n");
+
     //Read in 501 error file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
     int bytes_read = read_file("error_pages/501.html", file_buffer);
@@ -218,6 +226,11 @@ std::string build_404(rqheader_t rq) {
     oss << "Date: " << std::string(date);
     oss << "Content-Type: text/html\r\n";
     oss << "\r\n";
+
+    //Log the response header.
+    log_info("Response: -------------------------------------------\n");
+    log_info(oss.str().c_str());
+    log_info("-------------------------------------------\n");
 
     //Read in 404 error file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
@@ -270,6 +283,11 @@ std::string build_304(rqheader_t rq) {
     oss << "Date: " << std::string(date);
     oss << "\r\n";
 
+    //Log the response header.
+    log_info("Response: -------------------------------------------\n");
+    log_info(oss.str().c_str());
+    log_info("-------------------------------------------\n");
+
     std::string response = oss.str();
     std::cout << response;
 
@@ -320,6 +338,11 @@ std::string build_200(rqheader_t rq, const std::string &filepath) {
     oss << "Content-Type: " << contentType << "\r\n";
     oss << "Content-Length: " << bytes_read << "\r\n";
     oss << "\r\n";
+
+    //Log the response header.
+    log_info("Response: -------------------------------------------\n");
+    log_info(oss.str().c_str());
+    log_info("-------------------------------------------\n");
 
     std::cout << "Response (No Content): \n-----------------" << std::endl;
     std::cout << oss.str() << std::endl;

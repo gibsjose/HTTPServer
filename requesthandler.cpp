@@ -279,20 +279,23 @@ std::string build_200(rqheader_t rq, const std::string &filepath) {
         contentType = "text/plain";
     }
 
-    oss << "HTTP/1.1" << " 200" << " OK\r\n";
-    oss << "Date: " << std::string(date);
-    oss << "Content-Type: " << contentType << "\r\n";
-    oss << "\r\n";
-
     //Read in file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
     int bytes_read = read_file(filepath.c_str(), file_buffer);
 
-    oss << std::string(file_buffer) << "\r\n";
+    oss << "HTTP/1.1" << " 200" << " OK\r\n";
+    oss << "Date: " << std::string(date);
+    oss << "Content-Type: " << contentType << "\r\n";
+    oss << "Content-Length: " << bytes_read << "\r\n";
+    oss << "\r\n";
+
+    oss << std::string(file_buffer);
 
     free(file_buffer);
 
     std::string response = oss.str();
+
+    std::cout << "Response: \n-----------------" << std::endl;
 
     std::cout << response;
 
@@ -343,5 +346,5 @@ int read_file(std::string filepath, char * lBuffer)
         }
     }
 
-    return -1;
+    return lTotalBytesRead;
 }

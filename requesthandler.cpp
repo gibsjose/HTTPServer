@@ -85,6 +85,10 @@ void * requesthandler_run(void * aData_ptr)
         }
     }
 
+    //TO DO
+    //Call function to see if it goes out of our docroot and call build_403
+    
+
     //5. Create status 200 reponse.
     //   Set the file path to appropriate html response page (requested page)
     else {
@@ -220,6 +224,32 @@ std::string build_404(rqheader_t rq) {
     //Read in 404 error file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
     int bytes_read = read_file("error_pages/404.html", file_buffer);
+
+    oss << std::string(file_buffer) << "\r\n";
+
+    free(file_buffer);
+
+    std::string response = oss.str();
+
+    std::cout << response;
+
+    return response;
+}
+
+std::string build_403(rqheader_t rq) {
+    std::ostringstream oss;
+    char * date;
+
+    date = get_date_header();
+
+    oss << "HTTP/1.1" << " 403" << " Forbidden\r\n";
+    oss << "Date: " << std::string(date);
+    oss << "Content-Type: text/html\r\n";
+    oss << "\r\n";
+
+    //Read in 404 error file
+    char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
+    int bytes_read = read_file("error_pages/403.html", file_buffer);
 
     oss << std::string(file_buffer) << "\r\n";
 

@@ -41,22 +41,22 @@ void parse_request(rqheader_t * request, char* buffer);
 //Read appropriate html file for response 501.html
 //Append file content to response
 //Return pointer to response buffer
-std::string & build_501(rqheader_t rq);
+std::string build_501(rqheader_t rq);
 
 //Read appropriate html file for response 404.html
 //Append file content to response
 //Return pointer to response buffer
-char* build_404(void);
+std::string build_404(rqheader_t rq);
 
 //Read requested file metadata: stat()
 //Append file content to response (none for 304)
 //Return pointer to response buffer
-char* build_304(void);
+std::string build_304(rqheader_t rq);
 
 //Read the requested file
 //Append file content to response
 //Return pointer to response buffer
-char* build_200(rqheader_t* request);
+std::string build_200(rqheader_t request);
 
 //Return content length if read successful
 //Otherwise return some negative indicating error
@@ -65,6 +65,8 @@ int read_file(std::string filepath, char* buffer);
 //TODO: Decide if we are keeping this function
 char* get_date_header(void);
 
+//Checks whether a file exists at the given path
+bool file_exists(const std::string &);
 
 
 #endif

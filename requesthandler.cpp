@@ -58,12 +58,17 @@ void * requesthandler_run(void * aData_ptr)
 
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
-    //if(strcmp(r_header.type.c_str(), "GET")) {
+    if(strcmp(r_header.type.c_str(), "GET")) {
+        std::cout << "Not a GET request... 501" << std::endl;
         resp = build_501(r_header);
-    //}
+    }
 
     //3. Check if the file exists. If not send 404 response.
     //   Set the file path to appropriate html response page.
+    if(!file_exists(r_header.path)) {
+        std::cout << "File " << r_header.path << " not found... 404" << std::endl;
+        resp = build_404(r_header);
+    }
 
     //4. Check for if-modified since header in the request. If found and the requested
     //   file has not been modified, send a 304 response.
@@ -106,6 +111,10 @@ void * requesthandler_run(void * aData_ptr)
   }
 }
 
+bool file_exists(const std::string &path) {
+    int ret = access(path.c_str(), R_OK);
+    return (ret != -1);
+}
 
 void parse_request(rqheader_t* rq, char* buffer)
 {
@@ -154,7 +163,7 @@ void parse_request(rqheader_t* rq, char* buffer)
     // }
 }
 
-std::string & build_501(rqheader_t rq) {
+std::string build_501(rqheader_t rq) {
     std::ostringstream oss;
     char * date;
 
@@ -178,6 +187,46 @@ std::string & build_501(rqheader_t rq) {
     std::string response = oss.str();
 
     std::cout << response;
+
+    return response;
+}
+
+std::string build_404(rqheader_t rq) {
+    std::ostringstream oss;
+    char * date;
+
+    std::cout << "I'm in the 404 header function!" << std::endl;
+
+    date = get_date_header();
+
+    oss << "HTTP/1.1" << " 404" << " Not Found\r\n";
+    oss << std::string(date);
+    oss << "Content-Type: text/html\r\n";
+    oss << "\r\n";
+
+    //Read in 501 error file
+    char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);
+    int bytes_read = read_file("error_pages/404.html", file_buffer);
+
+    oss << std::string(file_buffer) << "\r\n";
+
+    free(file_buffer);
+
+    std::string response = oss.str();
+
+    std::cout << response;
+
+    return response;
+}
+
+std::string build_304(rqheader_t rq) {
+    std::string response;
+
+    return response;
+}
+
+std::string build_200(rqheader_t rq) {
+    std::string response;
 
     return response;
 }
@@ -217,4 +266,6 @@ int read_file(std::string filepath, char * lBuffer)
             }
         }
     }
+
+    return -1;
 }

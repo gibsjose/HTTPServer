@@ -186,7 +186,7 @@ std::string build_501(rqheader_t rq) {
     //std::cout << "rq.version = " << rq.version << std::endl;
 
     oss << "HTTP/1.1" << " 501" << " Not Implemented\r\n";
-    oss << std::string(date);
+    oss << "Date: " << std::string(date);
     oss << "Content-Type: text/html\r\n";
     oss << "\r\n";
 
@@ -212,7 +212,7 @@ std::string build_404(rqheader_t rq) {
     date = get_date_header();
 
     oss << "HTTP/1.1" << " 404" << " Not Found\r\n";
-    oss << std::string(date);
+    oss << "Date: " << std::string(date);
     oss << "Content-Type: text/html\r\n";
     oss << "\r\n";
 
@@ -238,7 +238,7 @@ std::string build_304(rqheader_t rq) {
     date = get_date_header();
 
     oss << "HTTP/1.1" << " 304" << " Not Modified\r\n";
-    oss << std::string(date);
+    oss << "Date: " << std::string(date);
     oss << "\r\n";
 
     std::string response = oss.str();
@@ -280,7 +280,7 @@ std::string build_200(rqheader_t rq, const std::string &filepath) {
     }
 
     oss << "HTTP/1.1" << " 200" << " OK\r\n";
-    oss << std::string(date);
+    oss << "Date: " << std::string(date);
     oss << "Content-Type: " << contentType << "\r\n";
     oss << "\r\n";
 

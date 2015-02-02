@@ -3,7 +3,10 @@
 void * requesthandler_run(void * aData_ptr)
 {
   //Dereference the void* pointer to be an int*.
-  int * lSocketFD = (int *) aData_ptr;
+  server_info_t * server_info = (server_info_t *) aData_ptr;
+  int lSocketFD = server_info->socket;
+  std::string docroot = server_info->docroot;
+
   char line[SOCKET_BUFFER_BYTES];
   rqheader_t r_header;
 
@@ -12,12 +15,12 @@ void * requesthandler_run(void * aData_ptr)
   timeout.tv_sec = SOCKET_READ_TIMEOUT_SEC;
   timeout.tv_usec = 0;
 
-  setsockopt(*lSocketFD, SOL_SOCKET, SO_RCVTIMEO, &timeout,sizeof(struct timeval));
+  setsockopt(lSocketFD, SOL_SOCKET, SO_RCVTIMEO, &timeout,sizeof(struct timeval));
 
   while(1)
   {
     printf("Receiving...\n");
-    size_t lRetVal_recv = recv(*lSocketFD, line, SOCKET_BUFFER_BYTES, 0);
+    size_t lRetVal_recv = recv(lSocketFD, line, SOCKET_BUFFER_BYTES, 0);
     if (0 == lRetVal_recv)
     {
       // Client likely closed the connection.
@@ -55,6 +58,7 @@ void * requesthandler_run(void * aData_ptr)
     char* response;
 
     std::string resp;
+    std::string filepath = docroot + "/" + r_header.path;
 
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
@@ -65,14 +69,20 @@ void * requesthandler_run(void * aData_ptr)
 
     //3. Check if the file exists. If not send 404 response.
     //   Set the file path to appropriate html response page.
-    if(!file_exists(r_header.path)) {
-        std::cout << "File " << r_header.path << " not found... 404" << std::endl;
+    if(!file_exists(filepath)) {
+        std::cout << "File " << filepath << " not found... 404" << std::endl;
         resp = build_404(r_header);
     }
 
-    //4. Check for if-modified since header in the request. If found and the requested
+    //4. Check for if-modified-since header in the request. If found and the requested
     //   file has not been modified, send a 304 response.
     //   Set the file path to appropriate html response page. (probably no page for this so filepath null)
+    if(r_header.header_map.find("if-modified-since") != r_header.header_map.end()) {
+        //if(!modified_since(r_header.header_map["if-modified-since"])) {
+            std::cout << "File " << filepath << " not modified since " << r_header.header_map["if-modified-since"] << "... 404" << std::endl;
+            resp = build_304(r_header);
+        //}
+    }
 
     //5. Create status 200 reponse.
     //   Set the file path to appropriate html response page (requested page)
@@ -82,7 +92,7 @@ void * requesthandler_run(void * aData_ptr)
 
     // TODO: Change me.  I just send back the same data I was sent.
     printf("Sending...\n");
-    size_t lRetVal_send = send(*lSocketFD,resp.c_str(),strlen(resp.c_str()),0);
+    size_t lRetVal_send = send(lSocketFD,resp.c_str(),strlen(resp.c_str()),0);
     if(-1 == lRetVal_send)
     {
       fprintf(stderr, "send(): Bad doodoo.\n");
@@ -103,7 +113,7 @@ void * requesthandler_run(void * aData_ptr)
 
     // TODO: Change me to intelligently close and exit.
     free(response);
-    close(*lSocketFD);
+    close(lSocketFD);
     pthread_exit(0);
 
     // Clear the buffer for reading from the client socket.

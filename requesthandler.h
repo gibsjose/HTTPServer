@@ -23,6 +23,11 @@
 
 #include "logger.h"
 
+typedef struct server_info_t {
+    int socket;
+    std::string docroot;
+}server_info_t;
+
 typedef std::map<std::string, std::string> header_map_t;
 typedef std::pair<std::string, std::string> header_pair_t;
 

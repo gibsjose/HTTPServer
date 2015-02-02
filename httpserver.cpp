@@ -32,16 +32,17 @@ void sigint_handler(int signum);
 int main(int argc, char * argv[]){
   //Parse the arguments for the port, document root and log file.
   unsigned lPort;
-  std::string lDocRoot;
   std::string lLogFile;
-  parse_args(argc, argv, lPort, lDocRoot, lLogFile);
+  server_info_t server_info;
+
+  parse_args(argc, argv, lPort, server_info.docroot, lLogFile);
 
   // Initialize logging.
   log_init(lLogFile.c_str());
 
   //TODO: Remove this debugging print block.
   log_info("Port: %u\n", lPort);
-  log_info("Document Root: \"%s\"\n", lDocRoot.c_str());
+  log_info("Document Root: \"%s\"\n", server_info.docroot.c_str());
   log_info("Log file: \"%s\"\n", lLogFile.c_str());
 
   // Handle the CTRL + C (SIGINT) signal.
@@ -82,6 +83,7 @@ int main(int argc, char * argv[]){
   while(1){
     log_info("Waiting for connection...\n");
     int clientsocket = accept(gServerSockfd, (struct sockaddr*)&clientaddr, &len);
+    server_info.socket = clientsocket;
 
     if (-1 == clientsocket)
     {
@@ -95,7 +97,7 @@ int main(int argc, char * argv[]){
 
     // This is a socket that we need to read from.
     pthread_t lThread;
-    if(pthread_create(&lThread, NULL, requesthandler_run, &clientsocket))
+    if(pthread_create(&lThread, NULL, requesthandler_run, &server_info))
     {
       log_error("pthread_create(): Error creating thread\n");
       return 1;

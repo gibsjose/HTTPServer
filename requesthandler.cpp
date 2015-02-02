@@ -56,7 +56,7 @@ void * requesthandler_run(void * aData_ptr)
 
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
-    if(strcmp(r_header.type, "GET")) {
+    if(strcmp(r_header.type.c_str(), "GET")) {
         response = build_501();
     }
     //3. Check if the file exists. If not send 404 response.
@@ -122,7 +122,7 @@ void parse_request(rqheader_t* rq, char* buffer)
         rq->version = std::string(token);
     }
 
-    log_info("type: %s\npath: %s\nversion: %s\n", rq->type, rq->path, rq->version);
+    log_info("type: %s\npath: %s\nversion: %s\n", rq->type.c_str(), rq->path.c_str(), rq->version.c_str());
 
     while(1) {
         line = strtok_r(NULL, "\n", &line_end);

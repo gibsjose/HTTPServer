@@ -5,7 +5,6 @@
 #define SOCKET_BUFFER_BYTES 50000
 #define MAX_FILE_SIZE_BYTES (50 * 1024 * 1024)
 
-#define _SVID_SOURCE
 #include <errno.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -61,7 +60,7 @@ char* build_200(rqheader_t* request);
 
 //Return content length if read successful
 //Otherwise return some negative indicating error
-int read_file(char * filepath, char* buffer);
+int read_file(std::string filepath, char* buffer);
 
 //TODO: Decide if we are keeping this function
 char* get_date_header(void);

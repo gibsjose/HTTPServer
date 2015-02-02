@@ -87,7 +87,7 @@ void * requesthandler_run(void * aData_ptr)
 
     //TO DO
     //Call function to see if it goes out of our docroot and call build_403
-    
+
 
     //5. Create status 200 reponse.
     //   Set the file path to appropriate html response page (requested page)
@@ -109,7 +109,8 @@ void * requesthandler_run(void * aData_ptr)
     * http://en.wikipedia.org/wiki/HTTP_persistent_connection
     * So close the socket if the Connection: close header is sent.
     */
-    if(r_header.header_map["Connection"] == "close") {
+    //Will not work when checking for Connection: close
+    if(r_header.header_map["Connection"] != "keep-alive") {
         close(lSocketFD);
     }
 

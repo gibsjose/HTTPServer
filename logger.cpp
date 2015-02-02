@@ -14,7 +14,7 @@ void log_init(const char * aFilename)
   // Initialize the mutex for accessing the log file.
   pthread_mutex_init(&gFileMutex, NULL);
 
-  if(aFilename != NULL)
+  if(aFilename != NULL && 0 != strlen(aFilename))
   {
     gLogFile_FILE = fopen(aFilename, "w");
   }

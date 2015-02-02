@@ -105,7 +105,7 @@ void * requesthandler_run(void * aData_ptr)
     * http://en.wikipedia.org/wiki/HTTP_persistent_connection
     * So close the socket if the Connection: close header is sent.
     */
-    if(r_header.header_map["Connection"] != "keep-alive") {
+    if(r_header.header_map["Connection"] == "close") {
         close(lSocketFD);
     }
 

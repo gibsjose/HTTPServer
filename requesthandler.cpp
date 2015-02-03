@@ -31,6 +31,7 @@ void * requesthandler_run(void * aData_ptr)
       //some other error
       fprintf(stderr, "recv(): Error\n");
       perror(strerror(errno));
+      close(lSocketFD);
       pthread_exit(NULL);
     }
     else
@@ -106,6 +107,7 @@ void * requesthandler_run(void * aData_ptr)
     if(-1 == lRetVal_send) {
       fprintf(stderr, "send(): Error\n");
       perror(strerror(errno));
+      close(lSocketFD);
       pthread_exit(NULL);
     } else {
       printf("Sent %lu bytes.\n", lRetVal_send);

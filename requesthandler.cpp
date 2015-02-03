@@ -59,11 +59,18 @@ void * requesthandler_run(void * aData_ptr)
     std::string resp;
     std::string filepath = docroot + "/" + r_header.path;
 
+
+
     resp.clear();
+
+    if(outside_docroot(filepath, docroot))
+    {
+        resp = build_403(r_header);
+    }
 
     //2. If request type is not implemented (!GET) then build 501 response.
     //   Set the file path to appropriate html response page.
-    if(strcmp(r_header.type.c_str(), "GET")) {
+    else if(strcmp(r_header.type.c_str(), "GET")) {
         std::cout << "Not a GET request... 501" << std::endl;
         resp = build_501(r_header);
     }
@@ -255,8 +262,8 @@ std::string build_404(rqheader_t rq) {
 
     return response;
 }
-
 std::string build_403(rqheader_t rq) {
+
     std::ostringstream oss;
     char * date;
 
@@ -425,4 +432,24 @@ int read_file(std::string filepath, char * lBuffer)
     }
 
     return lTotalBytesRead;
+}
+
+bool outside_docroot(const std::string &path, const std::string &root)
+{
+    char temp[1024];
+
+    realpath(path.c_str(), temp);
+    std::string abs_path = std::string(temp);
+    realpath(root.c_str(), temp);
+    std::string doc_root = std::string(temp);
+
+    std::cout << "DOCROOT: " << doc_root << std::endl;
+    std::cout << "REALPATH: " << abs_path << std::endl;
+
+    std::cout << "Filepath: " << temp << std::endl;
+    if(abs_path.find(doc_root) == std::string::npos){
+        std::cout << "OUTSIDE DOCROOT" << std::endl;
+        return true;
+    }
+    return false;
 }

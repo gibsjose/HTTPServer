@@ -54,6 +54,9 @@ std::string build_501(rqheader_t rq);
 //Return pointer to response buffer
 std::string build_404(rqheader_t rq);
 
+
+std::string build_403(rqheader_t rq);
+
 //Read requested file metadata: stat()
 //Append file content to response (none for 304)
 //Return pointer to response buffer
@@ -82,5 +85,7 @@ const char *get_filename_ext(const char *filename);
 
 //Gets the string denoting the last modified time of the file
 char *get_last_modified(const char *file);
+
+bool outside_docroot(const std::string &path, const std::string &root);
 
 #endif

@@ -109,16 +109,19 @@ void * requesthandler_run(void * aData_ptr)
     * http://en.wikipedia.org/wiki/HTTP_persistent_connection
     * So close the socket if the Connection: close header is sent.
     */
-    //Will not work when checking for Connection: close
-    if(r_header.header_map["Connection"] != "keep-alive") {
+    //Firefox is not sending the Connection: close header, so handle that by
+    //closing the socket if the keep-alive directive is not given.
+    if(r_header.header_map["Connection"].find("keep-alive") == std::string::npos) {
         close(lSocketFD);
+        break;
     }
-
-    pthread_exit(0);
 
     // Clear the buffer for reading from the client socket.
     memset(&line, 0, SOCKET_BUFFER_BYTES);
   }
+
+  log_info("Closing connection...\n");
+  pthread_exit(NULL);
 }
 
 bool file_exists(const std::string &path) {
@@ -258,6 +261,11 @@ std::string build_403(rqheader_t rq) {
     oss << "Date: " << std::string(date);
     oss << "Content-Type: text/html\r\n";
     oss << "\r\n";
+
+    //Log the response header.
+    log_info("Response: -------------------------------------------\n");
+    log_info(oss.str().c_str());
+    log_info("-------------------------------------------\n");
 
     //Read in 404 error file
     char* file_buffer = (char *)malloc(MAX_FILE_SIZE_BYTES);

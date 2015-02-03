@@ -168,6 +168,11 @@ void parse_request(rqheader_t* rq, char* buffer)
         token = strtok_r(NULL, " ", &tok_end);
         rq->path = std::string(token);
 
+        //Redirect the docroot to index.html
+        if(rq->path == "/") {
+            rq->path = "/index.html";
+        }
+
         token = strtok_r(NULL, " ", &tok_end);
         rq->version = std::string(token);
     }

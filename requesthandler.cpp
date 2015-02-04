@@ -134,6 +134,10 @@ bool file_exists(const std::string &path) {
 }
 
 bool modified_since(const std::string &path, const std::string &time_str) {
+
+    //There is a bug with the code below that we did not have time to fix...
+    return true;
+    
     struct stat st;
     stat(path.c_str(), &st);
 

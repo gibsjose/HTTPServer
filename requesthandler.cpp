@@ -64,6 +64,7 @@ void * requesthandler_run(void * aData_ptr)
 
     resp.clear();
 
+    //1. If the requested document is outside the document root, build a 403 Forbidden response.
     if(outside_docroot(filepath, docroot))
     {
         resp = build_403(r_header);
@@ -86,17 +87,11 @@ void * requesthandler_run(void * aData_ptr)
     //4. Check for if-modified-since header in the request. If found and the requested
     //   file has not been modified, send a 304 response.
     //   Set the file path to appropriate html response page. (probably no page for this so filepath null)
-    else if(r_header.header_map.find("if-modified-since") != r_header.header_map.end()) {
-        if(modified_since(filepath, r_header.header_map["if-modified-since"])) {
-            std::cout << "File " << filepath << " modified since " << r_header.header_map["if-modified-since"] << "... 304" << std::endl;
-            resp = build_304(r_header);
-        }
+    else if(r_header.header_map.find("If-Modified-Since") != r_header.header_map.end() &&
+            !modified_since(filepath, r_header.header_map["If-Modified-Since"])) {
+        std::cout << "File " << filepath << " not modified since \"" << r_header.header_map["If-Modified-Since"] << "\"... 304" << std::endl;
+        resp = build_304(r_header);
     }
-
-    //TO DO
-    //Call function to see if it goes out of our docroot and call build_403
-
-
     //5. Create status 200 reponse.
     //   Set the file path to appropriate html response page (requested page)
     else {
@@ -143,19 +138,23 @@ bool modified_since(const std::string &path, const std::string &time_str) {
     stat(path.c_str(), &st);
 
     time_t modified = st.st_mtime;
-    struct tm tm;
-    time_t check;
+    char buff[50];
+    struct tm * tmmodified = gmtime(&modified);
+    strftime(buff, sizeof(buff), "%a, %d, %b %Y %H:%M:%S", tmmodified);
+
+    printf("Time modified:%s\n", buff);
+
+    modified = timegm(tmmodified);
 
     //Convert the string to a time_t
-    strptime(time_str.c_str(), "%a, %d, %b %Y %H:%M:%S GMT\r\n", &tm);
+    struct tm tm;
+    strptime(time_str.c_str(), "%a, %d, %b %Y %H:%M:%S GMT", &tm);
 
-    check = mktime(&tm);
+    time_t check = mktime(&tm);
 
-    if(difftime(modified, check) > 0) {
-        return true;
-    } else {
-        return false;
-    }
+    double lDiffTime = difftime(modified, check);
+    std::cout << "difftime(): " << lDiffTime << std::endl;
+    return lDiffTime > 0;
 }
 
 void parse_request(rqheader_t* rq, char* buffer)
@@ -190,16 +189,21 @@ void parse_request(rqheader_t* rq, char* buffer)
         line = strtok_r(NULL, "\n", &line_end);
         if(line == NULL) break;
 
-        //Get key
-        char * key = strtok_r(line, ": ", &tok_end);
-        if(key == NULL) break;
+        std::string lLine(line);
 
-        //Get value
-        char * value = strtok_r(NULL, ": ", &tok_end);
-        if(value == NULL) break;
+        //Separate the key and value.
+        size_t lIndex = lLine.find(":");
+        if(lIndex == std::string::npos) break;
+
+        std::string lKey = lLine.substr(0, lIndex);
+        std::string lValue = lLine.substr(lIndex + 1);
+
+        //Trim the leading whitespace from the value.
+        lValue.erase(lValue.find_first_of(" "), 1);
+        lValue.erase(lValue.find_last_of("\r\n"), 2);
 
         //Insert the key/value pair into the header map
-        rq->header_map.insert(header_pair_t(std::string(key), std::string(value)));
+        rq->header_map.insert(header_pair_t(lKey, lValue));
     }
 }
 
